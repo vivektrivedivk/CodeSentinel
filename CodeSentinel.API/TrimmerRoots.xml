@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TrimmerRoots>
+  <!-- Preserve all types used in JSON serialization -->
+  <Assembly Name="CodeSentinel.API" />
+</TrimmerRoots>
