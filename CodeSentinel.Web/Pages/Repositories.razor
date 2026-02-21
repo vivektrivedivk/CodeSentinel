@@ -1,0 +1,222 @@
+﻿@page "/repositories"
+
+<PageTitle>Repositories - CodeSentinel</PageTitle>
+
+<div class="repositories-page">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Repositories</h1>
+            <p class="page-subtitle">Manage your indexed code repositories</p>
+        </div>
+        <button class="btn btn-primary" @onclick="ShowAddRepoModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Add Repository
+        </button>
+    </div>
+
+    @if (_repositories.Count == 0)
+    {
+        <div class="empty-state">
+            <div class="empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
+            </div>
+            <h3 class="empty-title">No repositories yet</h3>
+            <p class="empty-text">Add your first repository to start getting code-aware responses from the AI.</p>
+            <button class="btn btn-primary" @onclick="ShowAddRepoModal">
+                Add Your First Repository
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="repos-grid">
+            @foreach (var repo in _repositories)
+            {
+                <div class="repo-card">
+                    <div class="repo-header">
+                        <div class="repo-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                            </svg>
+                        </div>
+                        <div class="repo-info">
+                            <h4 class="repo-name">@repo.Name</h4>
+                            <span class="repo-path">@repo.Path</span>
+                        </div>
+                        <div class="repo-status @repo.Status.ToLower()">
+                            <span class="status-dot"></span>
+                            <span>@repo.Status</span>
+                        </div>
+                    </div>
+                    <div class="repo-stats">
+                        <div class="stat">
+                            <span class="stat-value">@repo.FileCount</span>
+                            <span class="stat-label">files</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">@FormatSize(repo.Size)</span>
+                            <span class="stat-label">size</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-value">@repo.LastIndexed?.ToString("MMM d")</span>
+                            <span class="stat-label">indexed</span>
+                        </div>
+                    </div>
+                    <div class="repo-actions">
+                        <button class="btn btn-ghost btn-sm" @onclick="() => ReindexRepo(repo)" disabled="@(repo.Status == "Indexing")">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Reindex
+                        </button>
+                        <button class="btn btn-ghost btn-sm text-danger" @onclick="() => RemoveRepo(repo)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Add Repository Modal -->
+@if (_showAddModal)
+{
+    <div class="modal-overlay" @onclick="HideAddRepoModal">
+        <div class="modal-content" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3 class="modal-title">Add Repository</h3>
+                <button class="modal-close" @onclick="HideAddRepoModal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Repository Path</label>
+                    <input type="text" @bind="_newRepoPath" placeholder="/path/to/your/repo" />
+                    <span class="input-hint">Absolute path to the repository directory</span>
+                </div>
+                <div class="form-group">
+                    <label>Name (optional)</label>
+                    <input type="text" @bind="_newRepoName" placeholder="My Project" />
+                    <span class="input-hint">A friendly name for this repository</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" @onclick="HideAddRepoModal">Cancel</button>
+                <button class="btn btn-primary" @onclick="AddRepository" disabled="@string.IsNullOrWhiteSpace(_newRepoPath)">
+                    Add Repository
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Repository> _repositories = new();
+    private bool _showAddModal = false;
+    private string _newRepoPath = "";
+    private string _newRepoName = "";
+
+    private class Repository
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Name { get; set; } = "";
+        public string Path { get; set; } = "";
+        public string Status { get; set; } = "Indexed";
+        public int FileCount { get; set; }
+        public long Size { get; set; }
+        public DateTime? LastIndexed { get; set; }
+    }
+
+    private void ShowAddRepoModal()
+    {
+        _showAddModal = true;
+        _newRepoPath = "";
+        _newRepoName = "";
+    }
+
+    private void HideAddRepoModal()
+    {
+        _showAddModal = false;
+    }
+
+    private void AddRepository()
+    {
+        if (string.IsNullOrWhiteSpace(_newRepoPath)) return;
+
+        var name = string.IsNullOrWhiteSpace(_newRepoName)
+            ? System.IO.Path.GetFileName(_newRepoPath.TrimEnd('/', '\\'))
+            : _newRepoName;
+
+        _repositories.Add(new Repository
+        {
+            Name = name,
+            Path = _newRepoPath,
+            Status = "Indexing",
+            FileCount = 0,
+            Size = 0,
+            LastIndexed = null
+        });
+
+        _showAddModal = false;
+
+        // Simulate indexing
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(2000);
+            var repo = _repositories.Last();
+            repo.Status = "Indexed";
+            repo.FileCount = new Random().Next(50, 500);
+            repo.Size = new Random().Next(1000000, 50000000);
+            repo.LastIndexed = DateTime.Now;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void ReindexRepo(Repository repo)
+    {
+        repo.Status = "Indexing";
+        // Simulate reindexing
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1500);
+            repo.Status = "Indexed";
+            repo.LastIndexed = DateTime.Now;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void RemoveRepo(Repository repo)
+    {
+        _repositories.Remove(repo);
+    }
+
+    private string FormatSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        int order = 0;
+        double size = bytes;
+        while (size >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            size /= 1024;
+        }
+        return $"{size:0.##} {sizes[order]}";
+    }
+}

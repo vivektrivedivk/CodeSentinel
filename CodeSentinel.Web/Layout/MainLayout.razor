@@ -1,16 +1,196 @@
 ﻿@inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@inject IJSRuntime JS
+@implements IDisposable
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<div class="page @(_sidebarCollapsed ? "sidebar-collapsed" : "")" data-theme="@_currentTheme">
+    <!-- Sidebar -->
+    <aside class="sidebar @(_sidebarCollapsed ? "collapsed" : "")">
+        <NavMenu Collapsed="_sidebarCollapsed" OnToggleSidebar="ToggleSidebar" />
+    </aside>
 
-        <article class="content px-4">
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="top-bar">
+            <div class="top-bar-left">
+                <button class="sidebar-toggle btn btn-ghost btn-sm" @onclick="ToggleSidebar" title="Toggle sidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="breadcrumb">
+                    <span class="app-name">CodeSentinel</span>
+                    <span class="separator">/</span>
+                    <span class="page-title">@GetPageTitle()</span>
+                </div>
+            </div>
+
+            <div class="top-bar-right">
+                <!-- Connection Status -->
+                <div class="connection-status @(_ollamaConnected ? "online" : "offline")" title="@(_ollamaConnected ? "Ollama connected" : "Ollama disconnected")">
+                    <span class="status-dot"></span>
+                    <span class="status-text">@(_ollamaConnected ? "Online" : "Offline")</span>
+                </div>
+
+                <!-- Theme Toggle -->
+                <button class="theme-toggle btn btn-ghost btn-sm" @onclick="ToggleTheme" title="Toggle theme">
+                    @if (_currentTheme == "dark")
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    }
+                    else
+                    {
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    }
+                </button>
+
+                <!-- Settings Link -->
+                <a href="/settings" class="btn btn-ghost btn-sm" title="Settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </a>
+
+                <!-- User Menu -->
+                <div class="user-menu">
+                    <button class="user-avatar" @onclick="ToggleUserMenu">
+                        <span class="avatar-text">CS</span>
+                    </button>
+                    @if (_showUserMenu)
+                    {
+                        <div class="user-dropdown">
+                            <div class="dropdown-header">
+                                <span class="user-name">CodeSentinel User</span>
+                                <span class="user-email">user@codesentinel.local</span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="/settings" class="dropdown-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item text-danger" @onclick="SignOut">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                Sign out
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <article class="content">
             @Body
         </article>
     </main>
 </div>
+
+<!-- Click outside handler for user menu -->
+@if (_showUserMenu)
+{
+    <div class="click-overlay" @onclick="() => _showUserMenu = false"></div>
+}
+
+@code {
+    private bool _sidebarCollapsed = false;
+    private string _currentTheme = "dark";
+    private bool _ollamaConnected = true;
+    private bool _showUserMenu = false;
+    private System.Timers.Timer? _connectionTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load theme preference
+        var savedTheme = await JS.InvokeAsync<string?>("localStorage.getItem", "codesentinel-theme");
+        if (!string.IsNullOrEmpty(savedTheme))
+        {
+            _currentTheme = savedTheme;
+        }
+
+        // Load sidebar state
+        var sidebarState = await JS.InvokeAsync<string?>("localStorage.getItem", "codesentinel-sidebar");
+        _sidebarCollapsed = sidebarState == "collapsed";
+
+        // Start connection check timer
+        _connectionTimer = new System.Timers.Timer(5000);
+        _connectionTimer.Elapsed += async (s, e) => await CheckConnection();
+        _connectionTimer.AutoReset = true;
+        _connectionTimer.Start();
+
+        await CheckConnection();
+    }
+
+    private async Task CheckConnection()
+    {
+        try
+        {
+            // Check Ollama connection
+            // This is a placeholder - implement actual health check
+            _ollamaConnected = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch
+        {
+            _ollamaConnected = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ToggleSidebar()
+    {
+        _sidebarCollapsed = !_sidebarCollapsed;
+        await JS.InvokeVoidAsync("localStorage.setItem", "codesentinel-sidebar", _sidebarCollapsed ? "collapsed" : "expanded");
+    }
+
+    private async Task ToggleTheme()
+    {
+        _currentTheme = _currentTheme == "dark" ? "light" : "dark";
+        await JS.InvokeVoidAsync("localStorage.setItem", "codesentinel-theme", _currentTheme);
+        await JS.InvokeVoidAsync("document.documentElement.setAttribute", "data-theme", _currentTheme);
+    }
+
+    private void ToggleUserMenu()
+    {
+        _showUserMenu = !_showUserMenu;
+    }
+
+    private void SignOut()
+    {
+        _showUserMenu = false;
+        // Implement sign out logic
+    }
+
+    private string GetPageTitle()
+    {
+        var uri = Navigation.Uri;
+        if (uri.Contains("/chat")) return "Chat";
+        if (uri.Contains("/settings")) return "Settings";
+        if (uri.Contains("/repositories")) return "Repositories";
+        if (uri.Contains("/history")) return "History";
+        return "Home";
+    }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
+
+    public void Dispose()
+    {
+        _connectionTimer?.Dispose();
+    }
+}
